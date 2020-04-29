@@ -78,5 +78,12 @@ for vmid in vmids:
     backup_check_crit = backup_date_obj - timedelta(days=args.critical)
 
     # Check last backup
-    if datetime.now() >= backup_check_warn:
+    if datetime.now() >= backup_check_crit:
         print ('Critical - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder')) 
+        sys.exit(CRITICAL)
+    if datetime.now() >= backup_check_warn:
+        print ('Warning - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
+        sys.exit(WARNING)
+    else:
+        print ('Ok - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
+        sys.exit(OK)
