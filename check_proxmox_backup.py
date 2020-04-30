@@ -55,12 +55,12 @@ for vmid in vmids:
     
     if vmid < 3:
         print ("Critical - Invalid vmid")
-        sys.exit(CRITICAL)
+        states.append(CRITICAL)
     if os.system('{0} list |grep $ID > /dev/null 2>&1'.format(QM)):
         vmtype = 'qemu'
     else:
         print ("Unknown - VM {vmid} does not exist".format(vmid))
-        sys.exit(UNKNOWN)
+        states.append(UNKNOWN)
 
     for backup in StorageList:
         if 'vzdump-{}-{}'.format(vmtype, vmid) in backup:
@@ -68,7 +68,7 @@ for vmid in vmids:
 
     if len(backups) == 0:
         print ('Critical - No backups of vm {0}'.format(vmid))
-        sys.exit(CRITICAL)
+        states.append(CRITICAL)
 
     # Get date string    
     last_item = backup[-1]
@@ -80,10 +80,25 @@ for vmid in vmids:
     # Check last backup
     if datetime.now() >= backup_check_crit:
         print ('Critical - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder')) 
-        sys.exit(CRITICAL)
+        states.append(CRITICAL)
     if datetime.now() >= backup_check_warn:
         print ('Warning - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
-        sys.exit(WARNING)
+        states.append(WARNING)
     else:
         print ('Ok - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
-        sys.exit(OK)
+        states.append(OK)
+
+
+#  Check states 
+if CRITICAL in states:
+    print ('Placeholder - crit')
+    sys.exit(CRITICAL)
+if WARNING in states and CRITICAL not in states and UNKNOWN not in states:
+    print ('placeholder - warn')
+    sys.exit(WARNING)
+if UNKNOWN in states and CRITICAL not in states and WARNING not in states:
+    print ('placeholder - unknown')
+    sys.exit(UNKNOWN)
+if OK in states and UNKNOWN not in states and CRITICAL not in states and WARNING not in states:
+    print ('placeholder - ok')
+    sys.exit(OK)
