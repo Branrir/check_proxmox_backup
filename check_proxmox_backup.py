@@ -37,6 +37,7 @@ QM = "sudo /usr/sbin/qm"
 
 # Temp vars
 states = []
+string_tmp = ''
 
 # Check if Backup Storage exist
 backup_storage = args.storage
@@ -52,14 +53,15 @@ vmids = args.vmid
 for vmid in vmids:
     vmtype = ''
     backups = []
+    string_tmp += 'VM {0}:'.format(vmid)
     
     if vmid < 3:
-        print ("Critical - Invalid vmid")
+        string_tmp += "Invalid vmid"
         states.append(CRITICAL)
     if os.system('{0} list |grep $ID > /dev/null 2>&1'.format(QM)):
         vmtype = 'qemu'
     else:
-        print ("Unknown - VM {vmid} does not exist".format(vmid))
+        string_tmp += "VM {0} does not exist".format(vmid)
         states.append(UNKNOWN)
 
     for backup in StorageList:
@@ -67,7 +69,7 @@ for vmid in vmids:
             backups.append(backup)
 
     if len(backups) == 0:
-        print ('Critical - No backups of vm {0}'.format(vmid))
+        string_tmp += 'No backups of vm {0}'.format(vmid)
         states.append(CRITICAL)
 
     # Get date string    
@@ -79,26 +81,26 @@ for vmid in vmids:
 
     # Check last backup
     if datetime.now() >= backup_check_crit:
-        print ('Critical - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder')) 
+        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder')) 
         states.append(CRITICAL)
     if datetime.now() >= backup_check_warn:
-        print ('Warning - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
+        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
         states.append(WARNING)
     else:
-        print ('Ok - {} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
+        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
         states.append(OK)
 
 
 #  Check states 
 if CRITICAL in states:
-    print ('Placeholder - crit')
+    print ('CRITICAL - {}')
     sys.exit(CRITICAL)
 if WARNING in states and CRITICAL not in states and UNKNOWN not in states:
-    print ('placeholder - warn')
+    print ('WARNING - {}')
     sys.exit(WARNING)
 if UNKNOWN in states and CRITICAL not in states and WARNING not in states:
-    print ('placeholder - unknown')
+    print ('UNKNOWN - {}')
     sys.exit(UNKNOWN)
 if OK in states and UNKNOWN not in states and CRITICAL not in states and WARNING not in states:
-    print ('placeholder - ok')
+    print ('OK - {}')
     sys.exit(OK)
