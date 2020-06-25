@@ -6,6 +6,7 @@ import argparse
 import datetime
 import timedelta
 import re
+import subprocess 
 
 
 # argparse
@@ -40,33 +41,38 @@ states = []
 string_tmp = ''
 
 # Check if Backup Storage exist
-backup_storage = args.storage
-if os.system('{0} lsit {1}'.format(PVESM, backup_storage)):
-    StorageList = os.system('{0} lsit {1}'.format(PVESM, backup_storage))
+backup_storage = args['storage']
+if os.system('bash -c "{0} list {1}"'.format(PVESM, backup_storage)) == 0:
+    StorageList = subprocess.check_output(['{0} list {1}'.format(PVESM, backup_storage)], shell=True, executable='/bin/bash')
+    StorageList = StorageList.splitlines()
+    #StorageList = subprocess.run(['bash', '-c', '{0} list {1}'.format(PVESM, backup_storage)], stdout=subprocess.PIPE).stdout
 else:
-    print ("Critical - Storage {0} does not exist")
+    print ("Critical - Storage {0} does not exist".format(backup_storage))
     sys.exit(CRITICAL)
 
 # Check VMID's and get Backups
-vmids = args.vmid
+vmids = args['vmid']
 
 for vmid in vmids:
     vmtype = ''
     backups = []
     string_tmp += 'VM {0}:'.format(vmid)
     
-    if vmid < 3:
+    if len(vmid) < 3:
         string_tmp += "Invalid vmid"
         states.append(CRITICAL)
-    if os.system('{0} list |grep $ID > /dev/null 2>&1'.format(QM)):
+    if os.system('{0} list |grep $ID > /dev/null 2>&1'.format(QM)) == 0:
         vmtype = 'qemu'
     else:
         string_tmp += "VM {0} does not exist".format(vmid)
         states.append(UNKNOWN)
 
     for backup in StorageList:
-        if 'vzdump-{}-{}'.format(vmtype, vmid) in backup:
-            backups.append(backup)
+        #print (backup)
+        print('vzdump-{0}-{1}'.format(vmtype, vmid))
+        if 'vzdump-{0}-{1}'.format(vmtype, vmid) in str(backup):
+            print(str(backup))
+            backups.append(str(backup))
 
     if len(backups) == 0:
         string_tmp += 'No backups of vm {0}'.format(vmid)
@@ -74,20 +80,21 @@ for vmid in vmids:
 
     # Get date string    
     last_item = backup[-1]
+    print(last_item)
     backup_date = re.search("([0-9]{4}\_[0-9]{2}\[0-9]{2}\-[0-9]{2}\_[0-9]{2}\_[0-9]{2})", last_item)
     backup_date_obj  = datetime.strptime(backup_date, '%y_%m_%d-%H_%M_%S')
-    backup_check_warn = backup_date_obj - timedelta(days=args.warning)
-    backup_check_crit = backup_date_obj - timedelta(days=args.critical)
+    backup_check_warn = backup_date_obj - timedelta(days=args['warning'])
+    backup_check_crit = backup_date_obj - timedelta(days=args['critical'])
 
     # Check last backup
     if datetime.now() >= backup_check_crit:
-        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder')) 
+        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder') 
         states.append(CRITICAL)
     if datetime.now() >= backup_check_warn:
-        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
+        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder')
         states.append(WARNING)
     else:
-        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder'))
+        string_tmp += '{} total backups of vm {}. Last backup is from {}. Size: ${}MB'.format(len(backups), vmid, backup_date_obj, 'placeholder')
         states.append(OK)
 
 
