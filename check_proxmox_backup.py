@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--storage', help = 'Storage where to search for backups', required = True)
 parser.add_argument('-c', '--critical', help = 'How old can Backup be (Critical)', default=3)
 parser.add_argument('-w', '--warning', help = 'How old can Backup be (Critical)', default=2)
-parser.add_argument('-v', '--vmid', help = "VMID's to check", required = True)
+parser.add_argument('-v', '--vmid', help = "VMID's to check", required = True, action='append')
 args = vars(parser.parse_args())
 
 # Return codes
@@ -61,7 +61,7 @@ for vmid in vmids:
     if len(vmid) < 3:
         string_tmp += "Invalid vmid"
         states.append(CRITICAL)
-    if os.system('{0} list |grep $ID > /dev/null 2>&1'.format(QM)) == 0:
+    if os.system('bash -c "{0} list | grep {1} > /dev/null 2>&1"'.format(QM, vmid)) == 0:
         vmtype = 'qemu'
     else:
         string_tmp += "VM {0} does not exist".format(vmid)
@@ -69,11 +69,10 @@ for vmid in vmids:
 
     for backup in StorageList:
         #print (backup)
-        print('vzdump-{0}-{1}'.format(vmtype, vmid))
         if 'vzdump-{0}-{1}'.format(vmtype, vmid) in str(backup):
-            print(str(backup))
             backups.append(str(backup))
 
+    
     if len(backups) == 0:
         string_tmp += 'No backups of vm {0}'.format(vmid)
         states.append(CRITICAL)
