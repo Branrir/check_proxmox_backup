@@ -58,7 +58,8 @@ def main(args):
         if os.system('bash -c "{0} list | grep {1} > /dev/null 2>&1"'.format(QM, vmid)) == 0:
             vmtype = 'qemu'
         else:
-            string_tmp += "VM {0} does not exist".format(vmid)
+            string_tmp += "VM {0} does not exist ".format(vmid)
+            vmtype = None
             states.append(UNKNOWN)
 
         for backup in StorageList:
@@ -71,30 +72,31 @@ def main(args):
 
 
     
-        if len(backups) == 0:
+        if vmtype == None:
             string_tmp += 'No backups of vm {0}'.format(vmid)
             states.append(CRITICAL)
 
         # Get date string
-        last_item = backups[-1]
-        size = round(int(last_item.rsplit(" ", 1)[-1][:-1])*9.3132257461548E-10, 2)
-        backup_date = re.search(r"\d{4}\_\d{2}\_\d{2}\-\d{2}\_\d{2}\_\d{2}", last_item).group()
-        if args['verbose']:
-            print('Last Backup:' + backup_date)
-        backup_date_obj  = datetime.datetime.strptime(backup_date, '%Y_%m_%d-%H_%M_%S')
-        backup_check_warn = backup_date_obj + datetime.timedelta(days=int(args['warning']))
-        backup_check_crit = backup_date_obj + datetime.timedelta(days=int(args['critical']))
+        if vmtype != None:
+            last_item = backups[-1]
+            size = round(int(last_item.rsplit(" ", 1)[-1][:-1])*9.3132257461548E-10, 2)
+            backup_date = re.search(r"\d{4}\_\d{2}\_\d{2}\-\d{2}\_\d{2}\_\d{2}", last_item).group()
+            if args['verbose']:
+                print('Last Backup:' + backup_date)
+            backup_date_obj  = datetime.datetime.strptime(backup_date, '%Y_%m_%d-%H_%M_%S')
+            backup_check_warn = backup_date_obj + datetime.timedelta(days=int(args['warning']))
+            backup_check_crit = backup_date_obj + datetime.timedelta(days=int(args['critical']))
 
-        # Check last backup
-        if datetime.datetime.now() >= backup_check_crit:
-            string_tmp += ' {0} total backups of vm {1}. Last backup is from {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size) 
-            states.append(CRITICAL)
-        if datetime.datetime.now() >= backup_check_warn:
-            string_tmp += ' {0} total backups of vm {1}. Last backup is from {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size)
-            states.append(WARNING)
-        else:
-            string_tmp += ' {0} total backups of vm {1}. Last backup is from {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size)
-            states.append(OK)
+            # Check last backup
+            if datetime.datetime.now() >= backup_check_crit:
+                string_tmp += ' {0} total backups of vm {1}. Last backup is from {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size) 
+                states.append(CRITICAL)
+            if datetime.datetime.now() >= backup_check_warn:
+                string_tmp += ' {0} total backups of vm {1}. Last backup is from {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size)
+                states.append(WARNING)
+            else:
+                string_tmp += ' {0} total backups of vm {1}. Last backup is from {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size)
+                states.append(OK)
 
 
     #  Check states 
