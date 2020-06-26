@@ -55,7 +55,7 @@ def main(args):
         if len(vmid) < 3:
             string_tmp += "Invalid vmid"
             states.append(CRITICAL)
-        if os.system('bash -c "{0} list | grep {1} > /dev/null 2>&1"'.format(QM, vmid)) == 0:
+        if os.system('bash -c "{0} list | grep \'{1} \'  > /dev/null 2>&1"'.format(QM, vmid)) == 0:
             vmtype = 'qemu'
         else:
             string_tmp += "VM {0} does not exist ".format(vmid)
