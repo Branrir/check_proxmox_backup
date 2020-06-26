@@ -35,7 +35,7 @@ def main(args):
 
     # Check if Backup Storage exist
     backup_storage = args['storage']
-    if os.system('bash -c "{0} list {1}"'.format(PVESM, backup_storage)) == 0:
+    if os.system('bash -c "{0} list {1} >/dev/null 2>&1"'.format(PVESM, backup_storage)) == 0:
         StorageList = subprocess.check_output(['{0} list {1}'.format(PVESM, backup_storage)], shell=True, executable='/bin/bash')
         StorageList = StorageList.splitlines()
         if args['verbose']:
