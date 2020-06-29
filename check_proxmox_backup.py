@@ -89,13 +89,13 @@ def main(args):
 
             # Check last backup
             if datetime.datetime.now() >= backup_check_crit:
-                string_tmp += ' {0} total backups: {1}. Last backup: {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size) 
+                string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size) 
                 states.append(CRITICAL)
             if datetime.datetime.now() >= backup_check_warn:
-                string_tmp += ' {0} total backups: {1}. Last backup: {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size)
+                string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size)
                 states.append(WARNING)
             else:
-                string_tmp += ' {0} total backups: {1}. Last backup: {2}. Size: {3}GiB;'.format(len(backups), vmid, backup_date_obj, size)
+                string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size)
                 states.append(OK)
 
 
