@@ -78,26 +78,29 @@ def main(args):
 
         # Get date string
         if vmtype != None:
-            last_item = backups[-1]
-            size = round(int(last_item.rsplit(" ", 2)[-2][:-1])*9.3132257461548E-9, 2)
-            backup_date = re.search(r"\d{4}\_\d{2}\_\d{2}\-\d{2}\_\d{2}\_\d{2}", last_item).group()
-            if args['verbose']:
-                print('Last Backup:' + backup_date)
-            backup_date_obj  = datetime.datetime.strptime(backup_date, '%Y_%m_%d-%H_%M_%S')
-            backup_check_warn = backup_date_obj + datetime.timedelta(days=int(args['warning']))
-            backup_check_crit = backup_date_obj + datetime.timedelta(days=int(args['critical']))
+            if backups[-1]:
+                last_item = backups[-1]
+                size = round(int(last_item.rsplit(" ", 2)[-2][:-1])*9.3132257461548E-9, 2)
+                backup_date = re.search(r"\d{4}\_\d{2}\_\d{2}\-\d{2}\_\d{2}\_\d{2}", last_item).group()
+                if args['verbose']:
+                    print('Last Backup:' + backup_date)
+                backup_date_obj  = datetime.datetime.strptime(backup_date, '%Y_%m_%d-%H_%M_%S')
+                backup_check_warn = backup_date_obj + datetime.timedelta(days=int(args['warning']))
+                backup_check_crit = backup_date_obj + datetime.timedelta(days=int(args['critical']))
 
-            # Check last backup
-            if datetime.datetime.now() >= backup_check_crit:
-                string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size) 
-                states.append(CRITICAL)
-            if datetime.datetime.now() >= backup_check_warn:
-                string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size)
-                states.append(WARNING)
+                # Check last backup
+                if datetime.datetime.now() >= backup_check_crit:
+                    string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size) 
+                    states.append(CRITICAL)
+                if datetime.datetime.now() >= backup_check_warn:
+                    string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size)
+                    states.append(WARNING)
+                else:
+                    string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size)
+                    states.append(OK)
             else:
-                string_tmp += ' Total backups: {0}. Last backup: {1}. Size: {2}GiB;'.format(len(backups), backup_date_obj, size)
-                states.append(OK)
-
+                string_tmp += ' No backups found'
+                states.append(CRITICAL)
 
     #  Check states 
     if CRITICAL in states:
