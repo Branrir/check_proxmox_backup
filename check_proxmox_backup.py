@@ -78,7 +78,7 @@ def main(args):
 
         # Get date string
         if vmtype != None:
-            if backups[-1]:
+            if len(backups) != 0:
                 last_item = backups[-1]
                 size = round(int(last_item.rsplit(" ", 2)[-2][:-1])*9.3132257461548E-9, 2)
                 backup_date = re.search(r"\d{4}\_\d{2}\_\d{2}\-\d{2}\_\d{2}\_\d{2}", last_item).group()
