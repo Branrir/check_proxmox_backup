@@ -17,7 +17,7 @@ Run following on remote server:
 ```bash
 cd /usr/lib/nagios/plugins
 wget https://raw.githubusercontent.com/Branrir/check_proxmox_backup/master/check_proxmox_backup.py
-chmod +x check_proxmox_backups.py
+chmod +x check_proxmox_backup.py
 ```
 ## 
 
