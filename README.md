@@ -1,4 +1,4 @@
-# Nagios SNMP Bandwidth check
+# Nagios Proxmox Backup check
 
 Nagios Check for Proxmox Backups.
 
