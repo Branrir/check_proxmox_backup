@@ -43,33 +43,54 @@ def main(args):
     else:
         print ("Critical - Storage {0} does not exist".format(backup_storage))
         sys.exit(CRITICAL)
-
+    
+    # Check Backup Storage type
+    if os.system('bash -c "{0} list {1} | grep \' pbs-\'>/dev/null 2>&1"'.format(PVESM, backup_storage)) == 0:
+        backup_storage_type = "pbs"
+        if args['verbose']:
+            print ("Given Storage is a Proxmox Backup Storage")
+    else:
+        backup_storage_type = "no-pbs"
+        if args['verbose']:
+            print ("Given Storage is NOT Proxmox Backup Storage")
     # Check VMID's and get Backups
     vmids = args['vmid']
 
     for vmid in vmids:
         vmtype = ''
+        vmtype_pbs = ''
         backups = []
-        string_tmp += ' VM {0}:'.format(vmid)
-    
+        string_tmp += ' VM/CT {0}:'.format(vmid)
+
         if len(vmid) < 3:
             string_tmp += "Invalid vmid"
             states.append(CRITICAL)
         if os.system('bash -c "{0} list | grep \'{1} \'  > /dev/null 2>&1"'.format(QM, vmid)) == 0:
             vmtype = 'qemu'
+            vmtype_pbs = 'vm'
         else:
-            string_tmp += "VM {0} does not exist ".format(vmid)
-            vmtype = None
-            states.append(UNKNOWN)
+            print ('bash -c "{0} | grep \'{1} \'  > /dev/null 2>&1"'.format(LXCLS, vmid))
+            if os.system('bash -c "{0} | grep \'{1} \'  > /dev/null 2>&1"'.format(LXCLS, vmid)) == 0:
+                
+                vmtype = 'lxc'
+                vmtype_pbs = 'ct'
+            else:
+                string_tmp += "VM/CT {0} does not exist ".format(vmid)
+                states.append(UNKNOWN)
 
         for backup in StorageList:
             if args['verbose']:
-                print ('Inspecting:' + str(backup))
-            if 'vzdump-{0}-{1}'.format(vmtype, vmid) in str(backup):
-                backups.append(str(backup))
-                if args['verbose']:
-                    print('Append: ' + str(backup))
-
+                print ('Inspecting:' + str(backup))                
+            if backup_storage_type == "no-pbs":
+                if 'vzdump-{0}-{1}'.format(vmtype, vmid) in str(backup):
+                    backups.append(str(backup))
+                    if args['verbose']:
+                        print('Append: ' + str(backup))
+            else:
+                if '/{0}/{1}/'.format(vmtype_pbs, vmid) in str(backup):
+                    backups.append(str(backup))
+                    if args['verbose']:
+                        print('Append: ' + str(backup))
 
     
         if vmtype == None:
@@ -78,16 +99,25 @@ def main(args):
 
         # Get date string
         if vmtype != None:
+        
+
+
             if len(backups) != 0:
                 last_item = backups[-1]
+                if backup_storage_type == "no-pbs":
+                    backup_date = re.search(r"\d{4}\_\d{2}\_\d{2}\-\d{2}\_\d{2}\_\d{2}", last_item).group()
+                    backup_date_obj  = datetime.datetime.strptime(backup_date, '%Y_%m_%d-%H_%M_%S')
+                else:
+                    backup_date = re.search(r"\d{4}\-\d{2}\-\d{2}T\d{2}\:\d{2}\:\d{2}Z", last_item).group()
+                    backup_date_obj  = datetime.datetime.strptime(backup_date, '%Y-%m-%dT%H:%M:%SZ')
                 try:
                     size = round(int(last_item.rsplit(" ", 2)[-2][:-1])*9.3132257461548E-9, 2)
                 except:
                     size = round(int(last_item.rsplit(" ", 2)[-1][:-1])*9.3132257461548E-9, 2)  
-                backup_date = re.search(r"\d{4}\_\d{2}\_\d{2}\-\d{2}\_\d{2}\_\d{2}", last_item).group()
+                
                 if args['verbose']:
                     print('Last Backup:' + backup_date)
-                backup_date_obj  = datetime.datetime.strptime(backup_date, '%Y_%m_%d-%H_%M_%S')
+                              
                 backup_check_warn = backup_date_obj + datetime.timedelta(days=int(args['warning']))
                 backup_check_crit = backup_date_obj + datetime.timedelta(days=int(args['critical']))
 
